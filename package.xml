@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<package>
+  <name>visp_blobs_tracker</name>
+  <version>0.0.1</version>
+
+  <description>Track and estimate a target compose by blobs</description>
+  <author>Giovanni Claudio</author>
+  <maintainer email="Giovanni.Claudio@inria.fr">Giovanni Claudio</maintainer>
+  <license>GPLv2</license>
+  <url>http://wiki.ros.org/visp_blobs_tracker</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>message_filters</build_depend>
+  <build_depend>resource_retriever</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>visp</build_depend>
+  <build_depend>visp_bridge</build_depend>
+  <build_depend>visp_tracker</build_depend>
+
+
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>resource_retriever</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>visp</run_depend>
+  <run_depend>visp_bridge</run_depend>
+  <run_depend>visp_tracker</run_depend>
+
+</package>

@@ -1,0 +1,26 @@
+<!-- -*- xml -*-
+
+     This tutorial relies on a live video sequence acquired with an 
+     usb camera in front of a QR code planar target. The model 
+     corresponding to this target is given into the models directory 
+     of this package.
+
+     Camera parameters are set as rosparam parameters. They need to be changed
+     to be the one of your camera.
+
+     See http://www.ros.org/wiki/visp_blobs_tracker for more information.
+
+  -->
+<launch>  
+  <!-- Launch the tracking node -->
+  <node pkg="visp_blobs_tracker" type="visp_blobs_tracker" name="visp_blobs_tracker" output="screen">
+    <param name="color_file_path" value="$(find visp_blobs_tracker)/data/color.txt" />
+    <param name="model_name" value="larm" />
+    <param name="debug_display" value="True" />
+    <param name="distance_points" value="0.0125" />    
+        
+    <remap from="/visp_blobs_tracker/camera_info" to="/camera/camera_info"/>
+    <remap from="/visp_blobs_tracker/image_raw" to="/camera/image_raw"/>
+  </node>
+
+</launch>
