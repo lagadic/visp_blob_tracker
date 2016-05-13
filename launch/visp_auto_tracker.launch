@@ -15,9 +15,10 @@
   <!-- Launch the tracking node -->
   <node pkg="visp_blobs_tracker" type="visp_blobs_tracker" name="visp_blobs_tracker" output="screen">
     <param name="color_file_path" value="$(find visp_blobs_tracker)/data/color.txt" />
-    <param name="model_name" value="larm" />
+    <param name="model_name" value="rarm" />
     <param name="debug_display" value="True" />
     <param name="distance_points" value="0.0125" />    
+    <param name="pub_desired_pose" value="True" />    
         
     <remap from="/visp_blobs_tracker/camera_info" to="/camera/camera_info"/>
     <remap from="/visp_blobs_tracker/image_raw" to="/camera/image_raw"/>

@@ -41,7 +41,12 @@ Node::Node() :
   image_header_(),
   got_image_(false),
   cam_(),
-  lastHeaderSeq_(0)
+  lastHeaderSeq_(0),
+  cMh_d_(),
+  cMh_d_offset(),
+  first_time(false),
+  d_t(0.01),
+  d_r(0.)
 {
   //get the tracker configuration file
   //this file contains all of the tracker's parameters, they are not passed to ros directly.
@@ -54,6 +59,10 @@ Node::Node() :
   n_.param("distance_points", dist_point_, 0.025/2);
   n_.param("frequency", freq_, 30);
   ROS_INFO("Distance points=%f",dist_point_);
+  n_.param<bool>("pub_desired_pose", pub_des_pose_, false);
+  if (pub_des_pose_)
+  ROS_INFO("Publisher desired pose enabled");
+
 
   //Set points coordinates
   points[2].setWorldCoordinates(-dist_point_,-dist_point_, 0) ;
@@ -72,6 +81,69 @@ void Node::waitForImage(){
     ros::spinOnce();
   }
 }
+
+
+
+const void Node::manageInputKey(const std::string s)
+{
+  if (s == "h")
+  {
+    tracker_.setManualBlobInit(true);
+    tracker_.setForceDetection(true);
+  }
+  else if (s == "r")
+  {
+    cMh_d_offset.buildFrom(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
+
+    d_t = 0.0;
+    d_r = 0.2;
+    std::cout << "Rotation mode. " << std::endl;
+  }
+  else if (s == "t")
+  {
+    cMh_d_offset.buildFrom(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
+
+    d_t = 0.01;
+    d_r = 0.0;
+    std::cout << "Translation mode. " << std::endl;
+  }
+
+  else if (s == "4") //-y
+  {
+    cMh_d_offset.buildFrom(0.0, -d_t, 0.0, 0.0, -d_r, 0.0) ;
+  }
+
+  else if (s == "6")  //+y
+  {
+    cMh_d_offset.buildFrom(0.0, d_t, 0.0, 0.0, d_r, 0.0) ;
+  }
+
+  else if (s == "8")  //+x
+  {
+    cMh_d_offset.buildFrom(d_t, 0.0, 0.0, d_r, 0.0, 0.0) ;
+  }
+
+  else if (s == "2") //-x
+  {
+    cMh_d_offset.buildFrom(-d_t, 0.0, 0.0, -d_r, 0.0, 0.0) ;
+  }
+
+  else if (s == "7")//-z
+  {
+    cMh_d_offset.buildFrom(0.0, 0.0, -d_t, 0.0, 0.0, -d_r) ;
+  }
+  else if (s == "9") //+z
+  {
+    cMh_d_offset.buildFrom(0.0, 0.0, d_t, 0.0, 0.0, d_r) ;
+  }
+
+  cMh_d_ = cMh_d_ * cMh_d_offset;
+  cMh_d_offset.eye();
+
+
+}
+
+
 
 //records last received image
 void Node::frameCallback(const sensor_msgs::ImageConstPtr& image, const sensor_msgs::CameraInfoConstPtr& cam_info){
@@ -108,6 +180,7 @@ void Node::spin(){
   message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::CameraInfo> image_info_sync(raw_image_subscriber, camera_info_subscriber, queue_size_);
   image_info_sync.registerCallback(boost::bind(&Node::frameCallback,this, _1, _2));
   ros::Publisher object_pose_publisher = n_.advertise<geometry_msgs::PoseStamped>(object_position_topic, queue_size_);
+  ros::Publisher object_des_pose_publisher = n_.advertise<geometry_msgs::PoseStamped>(object_des_position_topic, queue_size_);
   ros::Publisher status_publisher = n_.advertise<std_msgs::Int8>(status_topic, queue_size_);
 
   //wait for an image to be ready
@@ -139,9 +212,12 @@ void Node::spin(){
   }
 
   geometry_msgs::PoseStamped msg_pose;
+  geometry_msgs::PoseStamped msg_des_pose;
   std_msgs:: Int8 status;
   ros::Rate rate(freq_);
   unsigned int cont = 0;
+
+
 
 
   while(ros::ok()){
@@ -159,11 +235,9 @@ void Node::spin(){
       char key[10];
       bool ret = vpDisplay::getKeyboardEvent(I_, key, false);
       std::string s = key;
-      if (ret && s == "h")
-      {
-        tracker_.setManualBlobInit(true);
-        tracker_.setForceDetection(true);
-      }
+
+      if (ret)
+        manageInputKey(s);
 
       bool status_tracker_ =  tracker_.track(cv_ptr->image,I_);
 
@@ -172,6 +246,11 @@ void Node::spin(){
         vpDisplay::displayFrame(I_, cMo, cam_, 0.05, vpColor::none, 2);
         //cMo.print();
 
+        if (first_time)
+        {
+          cMh_d_ = cMo;
+          first_time = false;
+        }
         //std::cout << "Status:" << status_tracker_ << std::endl;
 
         // Publish pose
@@ -180,13 +259,26 @@ void Node::spin(){
         msg_pose.header.frame_id = camera_frame_name_;
         msg_pose.pose = visp_bridge::toGeometryMsgsPose(cMo); //convert
         object_pose_publisher.publish(msg_pose);
+
+
+        if (pub_des_pose_)
+        {
+          vpDisplay::displayFrame(I_, cMh_d_, cam_, 0.09, vpColor::cyan, 1);
+          // Publish desired pose
+          msg_des_pose.header.stamp = now;
+          msg_des_pose.header.frame_id = camera_frame_name_;
+          msg_des_pose.pose = visp_bridge::toGeometryMsgsPose(cMh_d_); //convert
+          object_des_pose_publisher.publish(msg_des_pose);
+        }
+
         //Publish status
         status.data = 1;
         status_publisher.publish(status);
       }
       else
       {
-        status.data = 1;
+        first_time = true;
+        status.data = 0;
         status_publisher.publish(status);
         ROS_DEBUG_THROTTLE(2, "Any blob target is detected");
       }
