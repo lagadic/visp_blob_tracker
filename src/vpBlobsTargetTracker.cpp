@@ -53,14 +53,12 @@ bool vpBlobsTargetTracker::track(const cv::Mat &cvI, const vpImage<unsigned char
 
         if (m_full_manual)
         {
-
           std::cout << "Full manual" << std::endl;
           vpDisplay::displayText(I, vpImagePoint(I.getHeight() - 10, 10), "Click on the 4 blobs", vpColor::red);
 
           vpDisplay::flush(I);
           for(std::list<vpDot2>::iterator it=m_blob_list.begin(); it != m_blob_list.end(); ++it)
           {
-
             (*it).setGraphics(true);
             (*it).setGraphicsThickness(1);
             (*it).initTracking(I);
@@ -68,12 +66,8 @@ bool vpBlobsTargetTracker::track(const cv::Mat &cvI, const vpImage<unsigned char
             vpDisplay::flush(I);
 
           }
-
-
           m_state = tracking;
           m_force_detection = false;
-
-
         }
 
 
@@ -99,8 +93,6 @@ bool vpBlobsTargetTracker::track(const cv::Mat &cvI, const vpImage<unsigned char
             blob.initTracking(I,cog);
           }
           blob.track(I);
-
-
 
 //          printf("Dot characteristics: \n");
 //          printf("  width : %lf\n", blob.getWidth());

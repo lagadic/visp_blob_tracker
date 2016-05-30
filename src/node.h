@@ -42,8 +42,10 @@ namespace visp_blobs_tracker{
                 vpHomogeneousMatrix cMh_d_;
                 vpHomogeneousMatrix cMh_d_offset;
                 bool first_time;
+                bool move_des_pose;
                 double d_t;
                 double d_r;
+                vpHomogeneousMatrix cMo;
 
                 cv_bridge::CvImagePtr cv_ptr;
                 cv::Mat cvI_;

@@ -45,8 +45,10 @@ Node::Node() :
   cMh_d_(),
   cMh_d_offset(),
   first_time(false),
+  move_des_pose(false),
   d_t(0.01),
-  d_r(0.)
+  d_r(0.),
+  cMo()
 {
   //get the tracker configuration file
   //this file contains all of the tracker's parameters, they are not passed to ros directly.
@@ -61,7 +63,7 @@ Node::Node() :
   ROS_INFO("Distance points=%f",dist_point_);
   n_.param<bool>("pub_desired_pose", pub_des_pose_, false);
   if (pub_des_pose_)
-  ROS_INFO("Publisher desired pose enabled");
+    ROS_INFO("Publisher desired pose enabled");
 
 
   //Set points coordinates
@@ -91,12 +93,26 @@ const void Node::manageInputKey(const std::string s)
     tracker_.setManualBlobInit(true);
     tracker_.setForceDetection(true);
   }
+  else if (s == "+")
+  {
+    unsigned int value = tracker_.getGrayLevelMaxBlob() +10;
+    tracker_.setGrayLevelMaxBlob(value);
+    std::cout << "Set to "<< value << "the value of  " << std::endl;
+
+  }
+  else if (s == "-")
+  {
+    unsigned int value = tracker_.getGrayLevelMaxBlob()-10;
+    tracker_.setGrayLevelMaxBlob(value-10);
+    std::cout << "Set to "<< value << " GrayLevelMaxBlob. " << std::endl;
+
+  }
   else if (s == "r")
   {
     cMh_d_offset.buildFrom(0.0, 0.0, 0.0, 0.0, 0.0, 0.0) ;
 
     d_t = 0.0;
-    d_r = 0.2;
+    d_r = 0.1;
     std::cout << "Rotation mode. " << std::endl;
   }
   else if (s == "t")
@@ -108,37 +124,45 @@ const void Node::manageInputKey(const std::string s)
     std::cout << "Translation mode. " << std::endl;
   }
 
-  else if (s == "4") //-y
+  else if (s == "d")
   {
-    cMh_d_offset.buildFrom(0.0, -d_t, 0.0, 0.0, -d_r, 0.0) ;
+    move_des_pose = !move_des_pose;
   }
 
-  else if (s == "6")  //+y
+  if (move_des_pose)
   {
-    cMh_d_offset.buildFrom(0.0, d_t, 0.0, 0.0, d_r, 0.0) ;
-  }
+    if (s == "4") //-y
+    {
+      cMh_d_offset.buildFrom(0.0, -d_t, 0.0, 0.0, -d_r, 0.0) ;
+    }
 
-  else if (s == "8")  //+x
-  {
-    cMh_d_offset.buildFrom(d_t, 0.0, 0.0, d_r, 0.0, 0.0) ;
-  }
+    else if (s == "6")  //+y
+    {
+      cMh_d_offset.buildFrom(0.0, d_t, 0.0, 0.0, d_r, 0.0) ;
+    }
 
-  else if (s == "2") //-x
-  {
-    cMh_d_offset.buildFrom(-d_t, 0.0, 0.0, -d_r, 0.0, 0.0) ;
-  }
+    else if (s == "8")  //+x
+    {
+      cMh_d_offset.buildFrom(d_t, 0.0, 0.0, d_r, 0.0, 0.0) ;
+    }
 
-  else if (s == "7")//-z
-  {
-    cMh_d_offset.buildFrom(0.0, 0.0, -d_t, 0.0, 0.0, -d_r) ;
-  }
-  else if (s == "9") //+z
-  {
-    cMh_d_offset.buildFrom(0.0, 0.0, d_t, 0.0, 0.0, d_r) ;
-  }
+    else if (s == "2") //-x
+    {
+      cMh_d_offset.buildFrom(-d_t, 0.0, 0.0, -d_r, 0.0, 0.0) ;
+    }
 
-  cMh_d_ = cMh_d_ * cMh_d_offset;
-  cMh_d_offset.eye();
+    else if (s == "7")//-z
+    {
+      cMh_d_offset.buildFrom(0.0, 0.0, -d_t, 0.0, 0.0, -d_r) ;
+    }
+    else if (s == "9") //+z
+    {
+      cMh_d_offset.buildFrom(0.0, 0.0, d_t, 0.0, 0.0, d_r) ;
+    }
+
+    cMh_d_ = cMh_d_ * cMh_d_offset;
+    cMh_d_offset.eye();
+  }
 
 
 }
@@ -231,7 +255,6 @@ void Node::spin(){
       vpDisplay::display(I_);
       click_done = vpDisplay::getClick(I_, button, false);
 
-
       char key[10];
       bool ret = vpDisplay::getKeyboardEvent(I_, key, false);
       std::string s = key;
@@ -242,7 +265,7 @@ void Node::spin(){
       bool status_tracker_ =  tracker_.track(cv_ptr->image,I_);
 
       if (status_tracker_) {
-        vpHomogeneousMatrix cMo = tracker_.get_cMo();
+        cMo = tracker_.get_cMo();
         vpDisplay::displayFrame(I_, cMo, cam_, 0.05, vpColor::none, 2);
         //cMo.print();
 
@@ -251,7 +274,14 @@ void Node::spin(){
           cMh_d_ = cMo;
           first_time = false;
         }
+
+        if (!move_des_pose)
+            cMh_d_ = cMo;
+
+
+
         //std::cout << "Status:" << status_tracker_ << std::endl;
+
 
         // Publish pose
         ros::Time now = ros::Time::now();
