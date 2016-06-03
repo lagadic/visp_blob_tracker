@@ -293,7 +293,7 @@ void Node::spin(){
 
         if (pub_des_pose_)
         {
-          vpDisplay::displayFrame(I_, cMh_d_, cam_, 0.09, vpColor::cyan, 1);
+          vpDisplay::displayFrame(I_, cMh_d_, cam_, 0.09, vpColor::none, 1);
           // Publish desired pose
           msg_des_pose.header.stamp = now;
           msg_des_pose.header.frame_id = camera_frame_name_;
