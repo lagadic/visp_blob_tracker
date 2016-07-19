@@ -39,6 +39,7 @@ namespace visp_blobs_tracker{
                 vpBlobsTargetTracker tracker_;
                 bool status_tracker_;
                 bool pub_des_pose_;
+                bool pub_object_cog_;
                 vpHomogeneousMatrix cMh_d_;
                 vpHomogeneousMatrix cMh_d_offset;
                 bool first_time;

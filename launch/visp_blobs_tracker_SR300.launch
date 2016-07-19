@@ -22,8 +22,8 @@
     <param name="pub_object_cog" value="True" />    
 
     
-    <remap from="/visp_blobs_tracker/camera_info" to="/camera/camera_info"/>
-    <remap from="/visp_blobs_tracker/image_raw" to="/camera/image_raw"/>
+    <remap from="/visp_blobs_tracker/camera_info" to="/SR300/rgb/camera_info"/>
+    <remap from="/visp_blobs_tracker/image_raw" to="/SR300/rgb/image_raw"/>
   </node>
 
 </launch>

@@ -12,6 +12,7 @@ namespace visp_blobs_tracker
 
         extern std::string object_position_topic;
         extern std::string object_des_position_topic;
+        extern std::string object_cog_topic;
         extern std::string code_message_topic;
         extern std::string init_service;
 

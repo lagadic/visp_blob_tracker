@@ -5,8 +5,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 
-#include "visp_tracker/MovingEdgeSites.h"
-#include "visp_tracker/KltPoints.h"
+//#include "visp_tracker/MovingEdgeSites.h"
+//#include "visp_tracker/KltPoints.h"
 
 //visp includes
 #include <visp/vpDisplayX.h>
@@ -21,6 +21,8 @@
 
 #include "std_msgs/Int8.h"
 #include "std_msgs/String.h"
+#include "std_msgs/String.h"
+#include "geometry_msgs/PointStamped.h"
 
 namespace visp_blobs_tracker{
 Node::Node() :
@@ -64,6 +66,9 @@ Node::Node() :
   n_.param<bool>("pub_desired_pose", pub_des_pose_, false);
   if (pub_des_pose_)
     ROS_INFO("Publisher desired pose enabled");
+  n_.param<bool>("pub_object_cog", pub_object_cog_, false);
+  if (pub_object_cog_)
+    ROS_INFO("Publisher object CoG enabled");
 
 
   //Set points coordinates
@@ -206,6 +211,7 @@ void Node::spin(){
   ros::Publisher object_pose_publisher = n_.advertise<geometry_msgs::PoseStamped>(object_position_topic, queue_size_);
   ros::Publisher object_des_pose_publisher = n_.advertise<geometry_msgs::PoseStamped>(object_des_position_topic, queue_size_);
   ros::Publisher status_publisher = n_.advertise<std_msgs::Int8>(status_topic, queue_size_);
+  ros::Publisher object_cog_publisher = n_.advertise<geometry_msgs::PointStamped>(object_cog_topic, queue_size_);
 
   //wait for an image to be ready
   waitForImage();
@@ -237,6 +243,7 @@ void Node::spin(){
 
   geometry_msgs::PoseStamped msg_pose;
   geometry_msgs::PoseStamped msg_des_pose;
+  geometry_msgs::PointStamped msg_cog;
   std_msgs:: Int8 status;
   ros::Rate rate(freq_);
   unsigned int cont = 0;
@@ -286,7 +293,7 @@ void Node::spin(){
         // Publish pose
         ros::Time now = ros::Time::now();
         msg_pose.header.stamp = now;
-        msg_pose.header.frame_id = camera_frame_name_;
+        msg_pose.header.frame_id = image_header_.frame_id;
         msg_pose.pose = visp_bridge::toGeometryMsgsPose(cMo); //convert
         object_pose_publisher.publish(msg_pose);
 
@@ -296,7 +303,7 @@ void Node::spin(){
           vpDisplay::displayFrame(I_, cMh_d_, cam_, 0.09, vpColor::none, 1);
           // Publish desired pose
           msg_des_pose.header.stamp = now;
-          msg_des_pose.header.frame_id = camera_frame_name_;
+          msg_des_pose.header.frame_id = image_header_.frame_id;
           msg_des_pose.pose = visp_bridge::toGeometryMsgsPose(cMh_d_); //convert
           object_des_pose_publisher.publish(msg_des_pose);
         }
@@ -329,6 +336,14 @@ void Node::spin(){
       //    status_publisher.publish(status);
       //  }
 
+       if (pub_object_cog_)
+       {
+           msg_cog.header.stamp = ros::Time::now();
+           msg_cog.point.x = tracker_.getCog().get_u();
+           msg_cog.point.y = tracker_.getCog().get_v();
+           msg_cog.point.z = 0.0;
+           object_cog_publisher.publish(msg_cog);
+       }
 
       vpDisplay::flush(I_);
       cont ++;
